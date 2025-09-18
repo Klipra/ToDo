@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDo List - Flat Style</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">Мой ToDo Лист</h1>
+            <p class="subtitle">Организуйте свои задачи</p>
+        </header>
+        
+        <div class="add-task-section">
+            <div class="input-container">
+                <input type="text" id="taskInput" placeholder="Добавить новую задачу..." class="task-input">
+                <button id="addBtn" class="add-btn">+</button>
+            </div>
+        </div>
+        
+        <div class="filter-section">
+            <button class="filter-btn active" data-filter="all">Все</button>
+            <button class="filter-btn" data-filter="active">Активные</button>
+            <button class="filter-btn" data-filter="completed">Завершенные</button>
+        </div>
+        
+        <div class="tasks-container">
+            <ul id="tasksList" class="tasks-list">
+                <!-- Задачи будут добавляться динамически -->
+            </ul>
+        </div>
+        
+        <div class="stats-section">
+            <div class="stats">
+                <span id="totalTasks">Всего задач: 0</span>
+                <span id="activeTasks">Активных: 0</span>
+                <span id="completedTasks">Завершенных: 0</span>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
