@@ -3,44 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToDo List - Flat Style</title>
+    <title>Habit Tracker</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1 class="title">Мой ToDo Лист</h1>
-            <p class="subtitle">Организуйте свои задачи</p>
-        </header>
-        
-        <div class="add-task-section">
-            <div class="input-container">
-                <input type="text" id="taskInput" placeholder="Добавить новую задачу..." class="task-input">
-                <button id="addBtn" class="add-btn">+</button>
+    <!-- 3D Background -->
+    <div id="background3d">
+        <div class="abstract-shape shape1"></div>
+        <div class="abstract-shape shape2"></div>
+        <div class="abstract-shape shape3"></div>
+        <div class="abstract-shape shape4"></div>
+        <div class="abstract-shape shape5"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-title" data-key="app-title">Habit Tracker</h1>
+            <div class="nav-buttons">
+                <button id="settingsBtn" class="nav-btn" data-key="settings">Настройки</button>
+                <button id="themeToggle" class="nav-btn">🌙</button>
             </div>
         </div>
-        
-        <div class="filter-section">
-            <button class="filter-btn active" data-filter="all">Все</button>
-            <button class="filter-btn" data-filter="active">Активные</button>
-            <button class="filter-btn" data-filter="completed">Завершенные</button>
-        </div>
-        
-        <div class="tasks-container">
-            <ul id="tasksList" class="tasks-list">
-                <!-- Задачи будут добавляться динамически -->
-            </ul>
-        </div>
-        
-        <div class="stats-section">
-            <div class="stats">
-                <span id="totalTasks">Всего задач: 0</span>
-                <span id="activeTasks">Активных: 0</span>
-                <span id="completedTasks">Завершенных: 0</span>
+    </nav>
+
+    <!-- Main Page -->
+    <div id="mainPage" class="page active">
+        <div class="container">
+            <!-- Motivation Message -->
+            <div id="motivationMessage" class="motivation-message hidden">
+                <p data-key="motivation-text">Не сдавайтесь! Каждый день - это новая возможность!</p>
+                <button id="closeMotivation" class="close-btn">×</button>
+            </div>
+
+            <!-- Add Habit Section -->
+            <div class="add-habit-section">
+                <h2 data-key="add-habit">Добавить привычку</h2>
+                <div class="input-container">
+                    <input type="text" id="habitInput" placeholder="Введите название привычки..." data-key="habit-placeholder">
+                    <button id="addHabitBtn" data-key="add">Добавить</button>
+                </div>
+            </div>
+
+            <!-- Habits List -->
+            <div class="habits-section">
+                <h2 data-key="my-habits">Мои привычки</h2>
+                <div id="habitsList" class="habits-list"></div>
+            </div>
+
+            <!-- Calendar -->
+            <div class="calendar-section">
+                <h2 data-key="progress-calendar">Календарь прогресса</h2>
+                <div id="calendar" class="calendar"></div>
             </div>
         </div>
     </div>
-    
+
+    <!-- Settings Page -->
+    <div id="settingsPage" class="page">
+        <div class="container">
+            <h2 data-key="settings">Настройки</h2>
+            
+            <!-- Theme Settings -->
+            <div class="settings-group">
+                <h3 data-key="theme-settings">Настройки темы</h3>
+                <div class="theme-options">
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="light" checked>
+                        <span data-key="light-theme">Светлая тема</span>
+                    </label>
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="dark">
+                        <span data-key="dark-theme">Темная тема</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Language Settings -->
+            <div class="settings-group">
+                <h3 data-key="language-settings">Язык</h3>
+                <select id="languageSelect">
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+
+            <!-- Data Management -->
+            <div class="settings-group">
+                <h3 data-key="data-management">Управление данными</h3>
+                <div class="data-buttons">
+                    <button id="exportBtn" class="data-btn" data-key="export">Экспорт данных</button>
+                    <button id="importBtn" class="data-btn" data-key="import">Импорт данных</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <button id="backToMain" class="back-btn" data-key="back">Назад к привычкам</button>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

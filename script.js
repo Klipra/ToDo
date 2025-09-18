@@ -1,374 +1,457 @@
-// ToDo List Application
-class TodoApp {
-    constructor() {
-        this.tasks = JSON.parse(localStorage.getItem('todoTasks')) || [];
-        this.currentFilter = 'all';
-        this.init();
-    }
+// Global variables
+let habits = JSON.parse(localStorage.getItem('habits')) || [];
+let currentTheme = localStorage.getItem('theme') || 'light';
+let currentLanguage = localStorage.getItem('language') || 'ru';
+let lastCheckDate = localStorage.getItem('lastCheckDate') || new Date().toDateString();
 
-    init() {
-        this.bindEvents();
-        this.renderTasks();
-        this.updateStats();
+// Translations
+const translations = {
+    ru: {
+        'app-title': 'Habit Tracker',
+        'settings': 'Настройки',
+        'motivation-text': 'Не сдавайтесь! Каждый день - это новая возможность!',
+        'add-habit': 'Добавить привычку',
+        'habit-placeholder': 'Введите название привычки...',
+        'add': 'Добавить',
+        'my-habits': 'Мои привычки',
+        'progress-calendar': 'Календарь прогресса',
+        'theme-settings': 'Настройки темы',
+        'light-theme': 'Светлая тема',
+        'dark-theme': 'Темная тема',
+        'language-settings': 'Язык',
+        'data-management': 'Управление данными',
+        'export': 'Экспорт данных',
+        'import': 'Импорт данных',
+        'back': 'Назад к привычкам',
+        'completed': 'Выполнено',
+        'delete': 'Удалить',
+        'days': 'дней',
+        'streak': 'серия'
+    },
+    en: {
+        'app-title': 'Habit Tracker',
+        'settings': 'Settings',
+        'motivation-text': "Don't give up! Every day is a new opportunity!",
+        'add-habit': 'Add Habit',
+        'habit-placeholder': 'Enter habit name...',
+        'add': 'Add',
+        'my-habits': 'My Habits',
+        'progress-calendar': 'Progress Calendar',
+        'theme-settings': 'Theme Settings',
+        'light-theme': 'Light Theme',
+        'dark-theme': 'Dark Theme',
+        'language-settings': 'Language',
+        'data-management': 'Data Management',
+        'export': 'Export Data',
+        'import': 'Import Data',
+        'back': 'Back to Habits',
+        'completed': 'Completed',
+        'delete': 'Delete',
+        'days': 'days',
+        'streak': 'streak'
     }
+};
 
-    bindEvents() {
-        // Добавление задачи
-        const addBtn = document.getElementById('addBtn');
-        const taskInput = document.getElementById('taskInput');
+// Initialize app
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    setup3DEffects();
+    setupEventListeners();
+    loadHabits();
+    generateCalendar();
+    checkMotivation();
+});
+
+function initializeApp() {
+    // Set theme
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    
+    // Set language
+    updateLanguage();
+    
+    // Update theme toggle button
+    updateThemeToggle();
+}
+
+function setup3DEffects() {
+    const shapes = document.querySelectorAll('.abstract-shape');
+    let mouseX = 0;
+    let mouseY = 0;
+    let scrollY = 0;
+
+    // Mouse movement effect
+    document.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth) * 360;
+        mouseY = (e.clientY / window.innerHeight) * 360;
         
-        addBtn.addEventListener('click', () => this.addTask());
-        taskInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.addTask();
-            }
-        });
-
-        // Фильтры
-        const filterBtns = document.querySelectorAll('.filter-btn');
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.setFilter(e.target.dataset.filter);
-            });
-        });
-    }
-
-    addTask() {
-        const taskInput = document.getElementById('taskInput');
-        const text = taskInput.value.trim();
-        
-        if (text === '') {
-            this.showNotification('Пожалуйста, введите текст задачи', 'error');
-            return;
-        }
-
-        const task = {
-            id: Date.now(),
-            text: text,
-            completed: false,
-            createdAt: new Date().toISOString()
-        };
-
-        this.tasks.unshift(task);
-        this.saveTasks();
-        this.renderTasks();
-        this.updateStats();
-        
-        taskInput.value = '';
-        this.showNotification('Задача добавлена!', 'success');
-    }
-
-    toggleTask(id) {
-        const task = this.tasks.find(t => t.id === id);
-        if (task) {
-            task.completed = !task.completed;
-            this.saveTasks();
-            this.renderTasks();
-            this.updateStats();
-        }
-    }
-
-    editTask(id) {
-        const task = this.tasks.find(t => t.id === id);
-        if (!task) return;
-
-        const newText = prompt('Редактировать задачу:', task.text);
-        if (newText !== null && newText.trim() !== '') {
-            task.text = newText.trim();
-            this.saveTasks();
-            this.renderTasks();
-            this.showNotification('Задача обновлена!', 'success');
-        }
-    }
-
-    deleteTask(id) {
-        if (confirm('Вы уверены, что хотите удалить эту задачу?')) {
-            this.tasks = this.tasks.filter(t => t.id !== id);
-            this.saveTasks();
-            this.renderTasks();
-            this.updateStats();
-            this.showNotification('Задача удалена!', 'info');
-        }
-    }
-
-    setFilter(filter) {
-        this.currentFilter = filter;
-        
-        // Обновляем активную кнопку фильтра
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
-        
-        this.renderTasks();
-    }
-
-    getFilteredTasks() {
-        switch (this.currentFilter) {
-            case 'active':
-                return this.tasks.filter(task => !task.completed);
-            case 'completed':
-                return this.tasks.filter(task => task.completed);
-            default:
-                return this.tasks;
-        }
-    }
-
-    renderTasks() {
-        const tasksList = document.getElementById('tasksList');
-        const filteredTasks = this.getFilteredTasks();
-
-        if (filteredTasks.length === 0) {
-            tasksList.innerHTML = this.getEmptyStateHTML();
-            return;
-        }
-
-        tasksList.innerHTML = filteredTasks.map(task => this.createTaskHTML(task)).join('');
-        
-        // Привязываем события к новым элементам
-        this.bindTaskEvents();
-    }
-
-    createTaskHTML(task) {
-        return `
-            <li class="task-item ${task.completed ? 'completed' : ''}" data-id="${task.id}">
-                <div class="task-checkbox ${task.completed ? 'checked' : ''}" data-action="toggle"></div>
-                <span class="task-text">${this.escapeHtml(task.text)}</span>
-                <div class="task-actions">
-                    <button class="edit-btn" data-action="edit" title="Редактировать">✏️</button>
-                    <button class="delete-btn" data-action="delete" title="Удалить">🗑️</button>
-                </div>
-            </li>
-        `;
-    }
-
-    getEmptyStateHTML() {
-        const messages = {
-            all: 'У вас пока нет задач. Добавьте первую!',
-            active: 'Нет активных задач. Отлично!',
-            completed: 'Нет завершенных задач.'
-        };
-
-        return `
-            <li class="empty-state">
-                <div style="text-align: center; padding: 40px 20px; color: #999;">
-                    <div style="font-size: 3rem; margin-bottom: 20px;">📝</div>
-                    <p>${messages[this.currentFilter]}</p>
-                </div>
-            </li>
-        `;
-    }
-
-    bindTaskEvents() {
-        document.querySelectorAll('.task-item').forEach(item => {
-            const taskId = parseInt(item.dataset.id);
+        shapes.forEach((shape, index) => {
+            const intensity = (index + 1) * 0.1;
+            const rotateX = (mouseY - 180) * intensity;
+            const rotateY = (mouseX - 180) * intensity;
             
-            // Переключение статуса задачи
-            item.querySelector('[data-action="toggle"]').addEventListener('click', () => {
-                this.toggleTask(taskId);
-            });
-
-            // Редактирование задачи
-            item.querySelector('[data-action="edit"]').addEventListener('click', () => {
-                this.editTask(taskId);
-            });
-
-            // Удаление задачи
-            item.querySelector('[data-action="delete"]').addEventListener('click', () => {
-                this.deleteTask(taskId);
-            });
+            shape.style.transform = `translateY(0px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
         });
-    }
+    });
 
-    updateStats() {
-        const total = this.tasks.length;
-        const completed = this.tasks.filter(task => task.completed).length;
-        const active = total - completed;
-
-        document.getElementById('totalTasks').textContent = `Всего задач: ${total}`;
-        document.getElementById('activeTasks').textContent = `Активных: ${active}`;
-        document.getElementById('completedTasks').textContent = `Завершенных: ${completed}`;
-    }
-
-    saveTasks() {
-        localStorage.setItem('todoTasks', JSON.stringify(this.tasks));
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    showNotification(message, type = 'info') {
-        // Создаем уведомление
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
+    // Scroll effect
+    document.addEventListener('scroll', () => {
+        scrollY = window.scrollY;
         
-        // Стили для уведомления
-        Object.assign(notification.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            padding: '15px 20px',
-            borderRadius: '10px',
-            color: 'white',
-            fontWeight: '500',
-            zIndex: '1000',
-            transform: 'translateX(100%)',
-            transition: 'transform 0.3s ease',
-            maxWidth: '300px',
-            wordWrap: 'break-word'
+        shapes.forEach((shape, index) => {
+            const intensity = (index + 1) * 0.5;
+            const rotation = scrollY * intensity;
+            
+            shape.style.transform += ` rotateZ(${rotation}deg)`;
         });
+    });
 
-        // Цвета для разных типов уведомлений
-        const colors = {
-            success: '#657D8D',
-            error: '#DAAD86',
-            info: '#659DBD'
+    // Wheel effect for flipping
+    document.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        
+        shapes.forEach((shape, index) => {
+            const flipIntensity = (index + 1) * 0.1;
+            const flipRotation = e.deltaY * flipIntensity;
+            
+            shape.style.transform += ` rotateX(${flipRotation}deg)`;
+        });
+    });
+}
+
+function setupEventListeners() {
+    // Navigation
+    document.getElementById('settingsBtn').addEventListener('click', showSettings);
+    document.getElementById('backToMain').addEventListener('click', showMain);
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    
+    // Habit management
+    document.getElementById('addHabitBtn').addEventListener('click', addHabit);
+    document.getElementById('habitInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addHabit();
+    });
+    
+    // Settings
+    document.querySelectorAll('input[name="theme"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            currentTheme = e.target.value;
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            updateThemeToggle();
+        });
+    });
+    
+    document.getElementById('languageSelect').addEventListener('change', (e) => {
+        currentLanguage = e.target.value;
+        localStorage.setItem('language', currentLanguage);
+        updateLanguage();
+    });
+    
+    // Data management
+    document.getElementById('exportBtn').addEventListener('click', exportData);
+    document.getElementById('importBtn').addEventListener('click', () => {
+        document.getElementById('importFile').click();
+    });
+    document.getElementById('importFile').addEventListener('change', importData);
+    
+    // Motivation message
+    document.getElementById('closeMotivation').addEventListener('click', () => {
+        document.getElementById('motivationMessage').classList.add('hidden');
+    });
+}
+
+function showSettings() {
+    document.getElementById('mainPage').classList.remove('active');
+    document.getElementById('settingsPage').classList.add('active');
+    
+    // Set current theme radio
+    document.querySelector(`input[name="theme"][value="${currentTheme}"]`).checked = true;
+    document.getElementById('languageSelect').value = currentLanguage;
+}
+
+function showMain() {
+    document.getElementById('settingsPage').classList.remove('active');
+    document.getElementById('mainPage').classList.add('active');
+}
+
+function toggleTheme() {
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    localStorage.setItem('theme', currentTheme);
+    updateThemeToggle();
+}
+
+function updateThemeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.textContent = currentTheme === 'light' ? '🌙' : '☀️';
+}
+
+function updateLanguage() {
+    const elements = document.querySelectorAll('[data-key]');
+    elements.forEach(element => {
+        const key = element.getAttribute('data-key');
+        if (translations[currentLanguage][key]) {
+            element.textContent = translations[currentLanguage][key];
+        }
+    });
+}
+
+function addHabit() {
+    const input = document.getElementById('habitInput');
+    const name = input.value.trim();
+    
+    if (name) {
+        const habit = {
+            id: Date.now(),
+            name: name,
+            createdAt: new Date().toISOString(),
+            completedDays: [],
+            streak: 0,
+            lastCompleted: null
         };
-        notification.style.background = colors[type] || colors.info;
-
-        document.body.appendChild(notification);
-
-        // Анимация появления
-        setTimeout(() => {
-            notification.style.transform = 'translateX(0)';
-        }, 100);
-
-        // Удаление через 3 секунды
-        setTimeout(() => {
-            notification.style.transform = 'translateX(100%)';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
-    }
-
-    // Дополнительные методы для расширения функциональности
-    clearCompleted() {
-        const completedCount = this.tasks.filter(task => task.completed).length;
-        if (completedCount === 0) {
-            this.showNotification('Нет завершенных задач для удаления', 'info');
-            return;
-        }
-
-        if (confirm(`Удалить ${completedCount} завершенных задач?`)) {
-            this.tasks = this.tasks.filter(task => !task.completed);
-            this.saveTasks();
-            this.renderTasks();
-            this.updateStats();
-            this.showNotification(`Удалено ${completedCount} задач`, 'success');
-        }
-    }
-
-    exportTasks() {
-        const dataStr = JSON.stringify(this.tasks, null, 2);
-        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `todo-tasks-${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-        this.showNotification('Задачи экспортированы!', 'success');
+        
+        habits.push(habit);
+        saveHabits();
+        loadHabits();
+        input.value = '';
     }
 }
 
-// Инициализация приложения
-document.addEventListener('DOMContentLoaded', () => {
-    window.todoApp = new TodoApp();
+function loadHabits() {
+    const habitsList = document.getElementById('habitsList');
+    habitsList.innerHTML = '';
     
-    // Добавляем дополнительные кнопки управления
-    const statsSection = document.querySelector('.stats-section');
-    const controlsDiv = document.createElement('div');
-    controlsDiv.style.cssText = 'margin-top: 15px; text-align: center;';
-    controlsDiv.innerHTML = `
-        <button onclick="todoApp.clearCompleted()" style="
-            background: linear-gradient(135deg, #657D8D 0%, #659DBD 100%); 
-            color: white; 
-            border: 2px solid #657D8D; 
-            padding: 8px 16px; 
-            border-radius: 15px; 
-            margin: 0 5px; 
-            cursor: pointer;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 8px rgba(101, 125, 141, 0.3);
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-        ">Очистить завершенные</button>
-        <button onclick="todoApp.exportTasks()" style="
-            background: linear-gradient(135deg, #DAAD86 0%, #c49a6b 100%); 
-            color: #333; 
-            border: 2px solid #c49a6b; 
-            padding: 8px 16px; 
-            border-radius: 15px; 
-            margin: 0 5px; 
-            cursor: pointer;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 8px rgba(218, 173, 134, 0.3);
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-        ">Экспорт</button>
-    `;
-    statsSection.appendChild(controlsDiv);
-});
+    habits.forEach(habit => {
+        const habitElement = createHabitElement(habit);
+        habitsList.appendChild(habitElement);
+    });
+}
 
-// Добавляем поддержку drag & drop для задач (опционально)
-document.addEventListener('DOMContentLoaded', () => {
-    let draggedElement = null;
+function createHabitElement(habit) {
+    const div = document.createElement('div');
+    div.className = 'habit-item';
+    div.innerHTML = `
+        <div class="habit-info">
+            <div class="habit-name">${habit.name}</div>
+            <div class="habit-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${calculateProgress(habit)}%"></div>
+                </div>
+                <div class="progress-text">${habit.streak} ${translations[currentLanguage]['days']}</div>
+            </div>
+        </div>
+        <div class="habit-actions">
+            <button class="habit-btn complete-btn" onclick="toggleHabitCompletion(${habit.id})">
+                ${translations[currentLanguage]['completed']}
+            </button>
+            <button class="habit-btn delete-btn" onclick="deleteHabit(${habit.id})">
+                ${translations[currentLanguage]['delete']}
+            </button>
+        </div>
+    `;
+    return div;
+}
+
+function toggleHabitCompletion(habitId) {
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit) return;
     
-    document.addEventListener('dragstart', (e) => {
-        if (e.target.classList.contains('task-item')) {
-            draggedElement = e.target;
-            e.target.style.opacity = '0.5';
-        }
-    });
+    const today = new Date().toDateString();
+    const todayIndex = habit.completedDays.indexOf(today);
     
-    document.addEventListener('dragend', (e) => {
-        if (e.target.classList.contains('task-item')) {
-            e.target.style.opacity = '1';
-            draggedElement = null;
-        }
-    });
-    
-    document.addEventListener('dragover', (e) => {
-        e.preventDefault();
-    });
-    
-    document.addEventListener('drop', (e) => {
-        e.preventDefault();
-        if (draggedElement && e.target.classList.contains('task-item')) {
-            const tasksList = document.getElementById('tasksList');
-            const afterElement = getDragAfterElement(tasksList, e.clientY);
-            
-            if (afterElement == null) {
-                tasksList.appendChild(draggedElement);
-            } else {
-                tasksList.insertBefore(draggedElement, afterElement);
-            }
-        }
-    });
-    
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.task-item:not(.dragging)')];
-        
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    if (todayIndex === -1) {
+        // Mark as completed
+        habit.completedDays.push(today);
+        habit.lastCompleted = today;
+        updateStreak(habit);
+    } else {
+        // Mark as not completed
+        habit.completedDays.splice(todayIndex, 1);
+        updateStreak(habit);
     }
-});
+    
+    saveHabits();
+    loadHabits();
+    generateCalendar();
+    checkMotivation();
+}
+
+function deleteHabit(habitId) {
+    if (confirm('Вы уверены, что хотите удалить эту привычку?')) {
+        habits = habits.filter(h => h.id !== habitId);
+        saveHabits();
+        loadHabits();
+        generateCalendar();
+    }
+}
+
+function updateStreak(habit) {
+    const sortedDays = habit.completedDays.sort();
+    let streak = 0;
+    let currentDate = new Date();
+    
+    for (let i = sortedDays.length - 1; i >= 0; i--) {
+        const completedDate = new Date(sortedDays[i]);
+        const daysDiff = Math.floor((currentDate - completedDate) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff === streak) {
+            streak++;
+            currentDate = new Date(completedDate);
+        } else {
+            break;
+        }
+    }
+    
+    habit.streak = streak;
+}
+
+function calculateProgress(habit) {
+    const daysSinceStart = Math.floor((new Date() - new Date(habit.createdAt)) / (1000 * 60 * 60 * 24)) + 1;
+    const completedDays = habit.completedDays.length;
+    return Math.min((completedDays / daysSinceStart) * 100, 100);
+}
+
+function generateCalendar() {
+    const calendar = document.getElementById('calendar');
+    calendar.innerHTML = '';
+    
+    // Calendar headers
+    const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    if (currentLanguage === 'en') {
+        daysOfWeek.splice(0, 7, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun');
+    }
+    
+    daysOfWeek.forEach(day => {
+        const header = document.createElement('div');
+        header.className = 'calendar-header';
+        header.textContent = day;
+        calendar.appendChild(header);
+    });
+    
+    // Get current month
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = (firstDay.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
+    
+    // Add empty cells for days before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'calendar-day other-month';
+        calendar.appendChild(emptyDay);
+    }
+    
+    // Add days of month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+        dayElement.textContent = day;
+        
+        const dateString = new Date(year, month, day).toDateString();
+        
+        // Check if any habit was completed on this day
+        const completedHabits = habits.filter(habit => 
+            habit.completedDays.includes(dateString)
+        );
+        
+        if (completedHabits.length > 0) {
+            if (completedHabits.length === habits.length) {
+                dayElement.classList.add('completed');
+            } else {
+                dayElement.classList.add('partial');
+            }
+        }
+        
+        // Check if this is a missed day (no habits completed for 2+ days)
+        const daysSinceLastCompletion = getDaysSinceLastCompletion();
+        if (daysSinceLastCompletion >= 2 && day === now.getDate()) {
+            dayElement.classList.add('missed');
+        }
+        
+        calendar.appendChild(dayElement);
+    }
+}
+
+function getDaysSinceLastCompletion() {
+    const today = new Date();
+    let maxDaysSince = 0;
+    
+    habits.forEach(habit => {
+        if (habit.lastCompleted) {
+            const lastCompleted = new Date(habit.lastCompleted);
+            const daysDiff = Math.floor((today - lastCompleted) / (1000 * 60 * 60 * 24));
+            maxDaysSince = Math.max(maxDaysSince, daysDiff);
+        } else {
+            maxDaysSince = Math.max(maxDaysSince, 999); // Very large number if never completed
+        }
+    });
+    
+    return maxDaysSince;
+}
+
+function checkMotivation() {
+    const daysSinceLastCompletion = getDaysSinceLastCompletion();
+    const motivationMessage = document.getElementById('motivationMessage');
+    
+    if (daysSinceLastCompletion >= 2) {
+        motivationMessage.classList.remove('hidden');
+    } else {
+        motivationMessage.classList.add('hidden');
+    }
+}
+
+function saveHabits() {
+    localStorage.setItem('habits', JSON.stringify(habits));
+}
+
+function exportData() {
+    const data = {
+        habits: habits,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `habits-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.habits && Array.isArray(data.habits)) {
+                habits = data.habits;
+                saveHabits();
+                loadHabits();
+                generateCalendar();
+                alert('Данные успешно импортированы!');
+            } else {
+                alert('Неверный формат файла!');
+            }
+        } catch (error) {
+            alert('Ошибка при чтении файла!');
+        }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input
+    event.target.value = '';
+}
+
+// Initialize theme on page load
+document.documentElement.setAttribute('data-theme', currentTheme);
